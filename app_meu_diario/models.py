@@ -5,7 +5,6 @@ class Usuario(AbstractUser):
     email = models.EmailField(unique=True)
     nome = models.CharField(max_length=100)
 
-    
     groups = models.ManyToManyField(
         Group,
         verbose_name='groups',
@@ -22,6 +21,9 @@ class Usuario(AbstractUser):
         related_name='usuario_set',
         related_query_name='usuario'
     )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['nome']
 
     def __str__(self):
         return self.nome

@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -37,24 +37,25 @@ def registro_view(request):
             messages.success(request, 'Cadastro realizado com sucesso!')
             return redirect('novo_registro')
         else:
-            messages.error(request, 'Erro no cadastro. Por favor, verifique os dados e tente novamente.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Erro no campo {field}: {error}")
     else:
         form = CustomUserCreationForm()
     return render(request, 'login.html', {'form': form})
 
 @login_required
 def novo_registro(request):
-    return render(request, 'registro.html')
-
-@login_required
-def salvar_registro(request):
     if request.method == 'POST':
         titulo = request.POST.get('titulo')
         conteudo = request.POST.get('conteudo')
-        Registro.objects.create(usuario=request.user, titulo=titulo, conteudo=conteudo, data_criacao=timezone.now())
-        messages.success(request, 'Registro salvo com sucesso!')
-        return redirect('ler_registros')
-    return redirect('novo_registro')
+        if titulo and conteudo:
+            Registro.objects.create(usuario=request.user, titulo=titulo, conteudo=conteudo, data_criacao=timezone.now())
+            messages.success(request, 'Registro salvo com sucesso!')
+            return redirect('ler_registros')
+        else:
+            messages.error(request, 'Por favor, preencha todos os campos.')
+    return render(request, 'registro.html')
 
 @login_required
 def ler_registros(request):
@@ -63,7 +64,7 @@ def ler_registros(request):
 
 @login_required
 def editar_registro(request, registro_id):
-    registro = Registro.objects.get(id=registro_id, usuario=request.user)
+    registro = get_object_or_404(Registro, id=registro_id, usuario=request.user)
     if request.method == 'POST':
         registro.titulo = request.POST.get('titulo')
         registro.conteudo = request.POST.get('conteudo')
